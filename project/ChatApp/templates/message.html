@@ -6,12 +6,82 @@
     <title>Document</title>
 </head>
 <body>
-    {% if messages %}
-        {% for message in messages %}
-            <p>
-                {{message.user}} : {{message.content}}
-            </p>
-        {% endfor %}
-    {% endif %}
+    <div class = "message">
+        {% if messages %}
+            {% for message in messages %}
+                <p>
+                    {{message.user}} : {{message.content}}
+                </p>
+            {% endfor %}
+        {% endif %}
+    </div>
+    <div class="form">
+        <form action="" id="message-form" method="POST">
+            {% csrf_token %}
+            <textarea id="msg" cols="30" name="message" rows="10" placeholder="Enter your message" required autofocus></textarea>
+            <button class="submit" type="submit">Send</button>
+        </form>    
+    </div>
+
+    <script type = "text/javascript">
+        
+        // Determine the WebSocket protocol based on the application's URL
+        const websocketProtocol = window.location.protocol === "https:" ? "wss" : "ws";
+        const wsEndpoint = `${websocketProtocol}://${window.location.host}/ws/{{room_name}}/`;          //same as routing.py file
+        
+        // Create a new WebSocket connection
+        const socket = new WebSocket(wsEndpoint);
+
+        // Successful connection event
+        socket.onopen = (event) => {
+            console.log("WebSocket connection opened!");
+        };
+
+        // Socket disconnect event
+        socket.onclose = (event) => {
+            console.log("WebSocket connection closed!");
+        };
+
+
+        //when form is submitted, grab data and send to consumer using socket
+        document.getElementById("message-form").addEventListener("submit", function(event){
+            event.preventDefault();
+            const message = document.getElementById("msg").value;
+            socket.send(
+                JSON.stringify({
+                    'message' : message,
+                    'room_name' : '{{room_name}}',
+                    'user' : '{{user}}'
+                })
+            )
+            
+            document.getElementById("msg").value = "";       //resset form field
+        })
+
+        //event listener to get and update the new message when consumer sends one
+        socket.addEventListener("message", (event) => {
+            const messageData = JSON.parse(event.data)['message'];
+            console.log(messageData);
+    
+            var sender = messageData['user'];
+            var message = messageData['message'];
+    
+            // Empty the message input field after the message has been sent
+            if (sender == '{{user}}'){
+                document.getElementById('msg').value = '';
+            }
+    
+            // Append the message to the chatbox
+            var messageDiv = document.querySelector('.message');
+            if (sender != '{{user}}') { // Assuming you have a variable `currentUser` to hold the current user's name
+                messageDiv.innerHTML += '<div class="receive"><p style="color: #000;">' + sender + ' : ' + message + '</p></div>';
+            } else {
+                messageDiv.innerHTML += '<div class="send"><p style="color: #000;">'  + sender + ' : '+ message + '</p></div>';
+            }
+        });
+
+    </script>
+
 </body>
+
 </html>

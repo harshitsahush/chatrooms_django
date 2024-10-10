@@ -11,7 +11,7 @@
             <h1>Enter Room</h1>
             <form action = "" method = "POST">
                 {% csrf_token %}
-                <input type="text" name="username" placeholder = "Username" required>
+                <input type="text" name="username" placeholder = "Username" required autofocus>
                 <br><br>
                 <input type="text" name="room" placeholder = "Room Name" required>
                 <br><br>
